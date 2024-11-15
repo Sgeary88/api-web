@@ -1,8 +1,8 @@
 // Create an array to hold promises
 const imagePromises = [];
 const favorites = [];
-let dogImages = []; // Store the dog image elements for sorting
-let favoriteImages = []; // Store the favorite image elements for sorting
+let dogImages = [];
+let favoriteImages = [];
 
 // Fetch 30 random dog images
 for (let i = 0; i < 30; i++) {
@@ -26,11 +26,11 @@ Promise.all(imagePromises)
     const sortButton = document.getElementById("sort-toggle");
     let isAscending = true;
 
-    // Function to extract breed name from the image URL
+    // Function to get breed name from the image URL
     function getBreedName(imageUrl) {
       const parts = imageUrl.split("/");
-      const breed = parts[4]; // The breed name is typically the 5th part of the URL
-      return breed.charAt(0).toUpperCase() + breed.slice(1); // Capitalize first letter
+      const breed = parts[4];
+      return breed.charAt(0).toUpperCase() + breed.slice(1);
     }
 
     // Create and append a card for each dog image
@@ -44,26 +44,26 @@ Promise.all(imagePromises)
       imgElement.alt = `${breed} Image`;
 
       const captionElement = document.createElement("p");
-      captionElement.textContent = breed; // Display breed name
+      captionElement.textContent = breed;
 
       const addToFavoritesButton = document.createElement("button");
       addToFavoritesButton.textContent = "Add to Favorites";
       addToFavoritesButton.addEventListener("click", () => {
-        addToFavorites(data, breed, dogCard); // Pass breed name
+        addToFavorites(data, breed, dogCard);
       });
 
       dogCard.appendChild(imgElement);
       dogCard.appendChild(captionElement);
       dogCard.appendChild(addToFavoritesButton);
 
-      dogImages.push(dogCard); // Store the DOM element to be sorted later
+      dogImages.push(dogCard);
       dogImagesContainer.appendChild(dogCard);
     });
 
     // Function to add item to Favorites
     function addToFavorites(data, breed, dogCard) {
       dogImagesContainer.removeChild(dogCard);
-      favorites.push({ data, breed }); // Store both data and breed name
+      favorites.push({ data, breed });
 
       const favoriteCard = document.createElement("div");
       favoriteCard.className = "dog-card";
@@ -73,7 +73,7 @@ Promise.all(imagePromises)
       imgElement.alt = "Dog Image";
 
       const captionElement = document.createElement("p");
-      captionElement.textContent = breed; // Use breed passed in
+      captionElement.textContent = breed;
 
       const removeFromFavoritesButton = document.createElement("button");
       removeFromFavoritesButton.textContent = "Remove from Favorites";
@@ -85,7 +85,7 @@ Promise.all(imagePromises)
       favoriteCard.appendChild(captionElement);
       favoriteCard.appendChild(removeFromFavoritesButton);
 
-      favoriteImages.push(favoriteCard); // Keep track of favorites for sorting
+      favoriteImages.push(favoriteCard);
       favoritesContainer.appendChild(favoriteCard);
     }
 
@@ -96,7 +96,7 @@ Promise.all(imagePromises)
       const index = favorites.findIndex((item) => item.data === data);
       if (index > -1) favorites.splice(index, 1);
 
-      // Recreate the dog card with an "Add to Favorites" button
+      // move card back to collection
       const dogCard = document.createElement("div");
       dogCard.className = "dog-card";
 
@@ -110,14 +110,14 @@ Promise.all(imagePromises)
       const addToFavoritesButton = document.createElement("button");
       addToFavoritesButton.textContent = "Add to Favorites";
       addToFavoritesButton.addEventListener("click", () => {
-        addToFavorites(data, getBreedName(data.message), dogCard); // Pass breed again
+        addToFavorites(data, getBreedName(data.message), dogCard);
       });
 
       dogCard.appendChild(imgElement);
       dogCard.appendChild(captionElement);
       dogCard.appendChild(addToFavoritesButton);
 
-      dogImages.push(dogCard); // Re-add to dogImages for sorting
+      dogImages.push(dogCard);
       dogImagesContainer.appendChild(dogCard);
     }
 
@@ -127,7 +127,7 @@ Promise.all(imagePromises)
         const textA = a.querySelector("p").textContent;
         const textB = b.querySelector("p").textContent;
 
-        // Sorting logic
+        // Sorting
         for (let i = 0; i < Math.min(textA.length, textB.length); i++) {
           const charA = textA.charCodeAt(i);
           const charB = textB.charCodeAt(i);
@@ -142,22 +142,48 @@ Promise.all(imagePromises)
           : textB.length - textA.length;
       });
 
-      // Append the sorted items without clearing the container
       items.forEach((item) => container.appendChild(item));
     }
 
-    // Toggle sort order and update button text
+    // Toggle button
     sortButton.addEventListener("click", () => {
       isAscending = !isAscending;
       sortButton.textContent = isAscending
         ? "Sort Alphabetically (Z-A)"
         : "Sort Alphabetically (A-Z)";
 
-      // Sort the dogImages and favorites independently
+      // Sort images in list and favorites
       sortAndRender(dogImagesContainer, dogImages, isAscending);
       sortAndRender(favoritesContainer, favoriteImages, isAscending);
     });
   })
   .catch((error) => {
     console.error("There was a problem with the fetch operation:", error);
+  });
+
+// Fetch the breed list and sub-breeds
+fetch("https://dog.ceo/api/breeds/list/all")
+  .then((response) => response.json())
+  .then((data) => {
+    const breedList = data.message;
+
+    // Sum the number of subtypes for each breed
+    let totalSubtypes = 0;
+    for (const breed in breedList) {
+      if (breedList.hasOwnProperty(breed)) {
+        const subtypes = breedList[breed];
+        totalSubtypes += Array.isArray(subtypes) ? subtypes.length : 0;
+      }
+    }
+
+    // Display the total number of subtypes
+    const totalSubtypesElement = document.getElementById("total-subtypes");
+    if (totalSubtypesElement) {
+      totalSubtypesElement.textContent = `Total number of subtypes: ${totalSubtypes}`;
+    } else {
+      console.error("Element with id 'total-subtypes' not found");
+    }
+  })
+  .catch((error) => {
+    console.error("Error fetching breed list:", error);
   });
